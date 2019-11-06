@@ -6,12 +6,18 @@ import (
 	"flag"
 	"strconv"
 	"bufio"
+	"strings"
 )
 
 type FtpConnect struct {
 	conn net.Conn
 	user string
 	dir string
+}
+
+type FtpAnswer struct {
+	code int
+	status string
 }
 
 func accept(port int) {
@@ -47,7 +53,6 @@ func handle(conn net.Conn) {
 	for {
 		line, err := b.ReadBytes('\n')
 		if err != nil {
-			fmt.Println("close conn")
 			break
 		}
 		ret := parser(string(line), ftp)
@@ -56,10 +61,16 @@ func handle(conn net.Conn) {
 }
 
 func parser(line string, ftp *FtpConnect) string {
-	if ftp.user == "anonymous" {
-		ftp.user = "User: " + line
+	words := strings.Split(line, " ")
+	tokens := make([]string, 0, len(words))
+	for _, word := range words {
+		if word != "" {
+			tokens = append(tokens, strings.ToUpper(word))
+		}
 	}
-	return ftp.user
+	res := new(FtpAnswer)
+	execute(tokens, ftp, res)
+	return strconv.Itoa(res.code) + " " + res.status + "\n"
 }
 	
 func main() { 
