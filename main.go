@@ -12,6 +12,7 @@ import (
 type FtpConnect struct {
 	conn net.Conn
 	user string
+	logged bool
 	dir string
 }
 
@@ -49,6 +50,7 @@ func handle(conn net.Conn) {
 	b := bufio.NewReader(conn)
 	ftp := new(FtpConnect)
 	ftp.conn = conn
+	ftp.logged = false
 	ftp.user = "anonymous"
 	for {
 		line, err := b.ReadBytes('\n')
@@ -61,16 +63,21 @@ func handle(conn net.Conn) {
 }
 
 func parser(line string, ftp *FtpConnect) string {
+	line = strings.Split(line, "\r")[0]
+	line = strings.Split(line, "\n")[0]
 	words := strings.Split(line, " ")
 	tokens := make([]string, 0, len(words))
 	for _, word := range words {
 		if word != "" {
-			tokens = append(tokens, strings.ToUpper(word))
+			tokens = append(tokens, word)
 		}
 	}
 	res := new(FtpAnswer)
 	execute(tokens, ftp, res)
-	return strconv.Itoa(res.code) + " " + res.status + "\n"
+	if res.code != 0 {
+		return strconv.Itoa(res.code) + " " + res.status + "\n"
+	}
+	return ""
 }
 	
 func main() { 
