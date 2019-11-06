@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"bufio"
 	"strings"
+	"encoding/json"
+	"io/ioutil"
 )
 
 type FtpConnect struct {
@@ -20,6 +22,10 @@ type FtpAnswer struct {
 	code int
 	status string
 }
+
+var params map[string]string
+var users []map[string]string
+var passes map[string]string
 
 func accept(port int) {
 	server, err := net.Listen("tcp", ":" + strconv.Itoa(port))
@@ -79,10 +85,47 @@ func parser(line string, ftp *FtpConnect) string {
 	}
 	return ""
 }
+
+func loadParams() bool {
+	var config map[string]interface{}
+	bs, err := ioutil.ReadFile(params["config"])
+	if err != nil {
+		fmt.Println("config: ", err)
+		return false
+	}
+	json.Unmarshal([]byte(bs), &config)
+	pathes := config["pathes"].(map[string]interface{})
+	for k,_ := range pathes {
+		params[k] = pathes[k].(string)
+	}
+	us, err := ioutil.ReadFile(params["users"])
+	if err != nil {
+		fmt.Println("users: ", err)
+		return false
+	}
+	json.Unmarshal([]byte(us), &users)
+	ps, err := ioutil.ReadFile(params["shadow"])
+	if err != nil {
+		fmt.Println("passes: ", err)
+		return false
+	}
+	passes = make(map[string]string)
+	for _,v := range strings.Split(string(ps),"\n") {
+		match := strings.Split(v,":")
+		passes[match[0]] = match[1]
+	}
+	return true
+}
 	
-func main() { 
+func main() {
+	params = make(map[string]string) 
 	port := flag.Int("port", 8000, "Number of port")
+	config := flag.String("users", "data/config.json", "Path to configs file")
+	params["config"] = *config
 	flag.Parse() 
+	if !loadParams() {
+		return
+	}
 	go accept(*port)
 	var test string
 	fmt.Scanln(&test)

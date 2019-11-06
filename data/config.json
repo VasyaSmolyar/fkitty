@@ -1,0 +1,6 @@
+{
+    "pathes" : {
+        "users" : "data/users.json",
+        "shadow" : "data/shadow"
+    }
+}
