@@ -60,6 +60,7 @@ func handle(conn net.Conn) {
 	ftp.logged = false
 	ftp.connected = true
 	ftp.user = "anonymous"
+	conn.Write([]byte("220 Welcome to Fkitty FTP Server!\n"))
 	for ftp.connected {
 		line, err := b.ReadBytes('\n')
 		if err != nil {
