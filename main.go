@@ -13,6 +13,7 @@ import (
 
 type FtpConnect struct {
 	conn net.Conn
+	connected bool
 	user string
 	logged bool
 	dir string
@@ -57,8 +58,9 @@ func handle(conn net.Conn) {
 	ftp := new(FtpConnect)
 	ftp.conn = conn
 	ftp.logged = false
+	ftp.connected = true
 	ftp.user = "anonymous"
-	for {
+	for ftp.connected {
 		line, err := b.ReadBytes('\n')
 		if err != nil {
 			break
@@ -66,6 +68,7 @@ func handle(conn net.Conn) {
 		ret := parser(string(line), ftp)
 		conn.Write([]byte(ret))
 	}
+	conn.Close()
 }
 
 func parser(line string, ftp *FtpConnect) string {
