@@ -17,6 +17,7 @@ type FtpConnect struct {
 	user string
 	logged bool
 	dir string
+	file FileConnect
 }
 
 type FtpAnswer struct {
@@ -133,4 +134,13 @@ func main() {
 	go accept(*port)
 	var test string
 	fmt.Scanln(&test)
+}
+
+func (ftp *FtpConnect) write(res *FtpAnswer) {
+	if(ftp.connected) {
+		if res.code != 0 {
+			ans := strconv.Itoa(res.code) + " " + res.status + "\n"
+			ftp.conn.Write([]byte(ans))
+		}
+	}
 }
