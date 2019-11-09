@@ -59,6 +59,11 @@ func user(args []string, ftp *FtpConnect, ans *FtpAnswer) {
 		ans.status = "You're already logged in"
 		return
 	}
+	if len(args) == 0 {
+		ans.code = 530
+		ans.status = "This is a private system - No anonymous login"
+		return
+	}
 	ftp.user = args[0]
 	ans.code = 331
 	ans.status = "User " + ftp.user + " OK. Password required"
@@ -68,6 +73,11 @@ func pass(args []string, ftp *FtpConnect, ans *FtpAnswer) {
 	if ftp.logged == true {
 		ans.code = 530 
 		ans.status = "We can't do that in the current session"
+		return
+	}
+	if len(args) == 0 {
+		ans.code = 530
+		ans.status = "Login authentication failed"
 		return
 	}
 	hash := sha512.New();
