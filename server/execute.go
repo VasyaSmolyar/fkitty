@@ -2,10 +2,12 @@ package main
 
 import (
 	"strings"
+	"strconv"
 	"crypto/sha512"
 	"encoding/hex"
 	"os"
 	"path/filepath"
+	"errors"
 )
 
 func execute(tokens []string, ftp *FtpConnect, ans *FtpAnswer) {
@@ -18,6 +20,7 @@ func execute(tokens []string, ftp *FtpConnect, ans *FtpAnswer) {
 		"RMD" : isLogged(rmd),
 		"CWD" : isLogged(cwd),
 		"PWD" : isLogged(pwd),
+		"PORT" : isLogged(port),
 	}
 
 	if len(tokens) == 0 {
@@ -51,6 +54,32 @@ func isLogged(ex func(args []string, ftp *FtpConnect, ans *FtpAnswer)) func(args
 		}
 		ex(args, ftp, ans)
 	}
+}
+
+func getHost(host string) (string, error) {
+	args := strings.Split(host, ",")
+	if len(args) != 6 {
+		return "", errors.New("Parsing error")
+	}
+	ips := make([]int, len(args))
+	for i, v := range args {
+		nv, err := strconv.Atoi(v)
+		if err != nil {
+			return "", err
+		}
+		ips[i] = nv
+	}
+	hex1 := strconv.FormatInt(int64(ips[4]), 16)
+	if len(hex1) == 1 {
+		hex1 = "0" + hex1 
+	}
+	hex2 := strconv.FormatInt(int64(ips[5]), 16)
+	if len(hex2) == 1 {
+		hex2 = "0" + hex2
+	}
+	hex := hex1 + hex2
+	port, _ := strconv.ParseInt("0x" + hex, 0, 64)
+	return args[0] + "." + args[1] + "." + args[2] + "." + args[3] + ":" + strconv.Itoa(int(port)), nil
 }
 
 func user(args []string, ftp *FtpConnect, ans *FtpAnswer) {
@@ -139,4 +168,21 @@ func cwd(args []string, ftp *FtpConnect, ans *FtpAnswer) {
 func pwd(args []string, ftp *FtpConnect, ans *FtpAnswer) {
 	ans.code = 257
 	ans.status = string('"') + ftp.dir + string('"') + " : is your current location"
+}
+
+func port(args []string, ftp *FtpConnect, ans *FtpAnswer) {
+	if len(args) == 0 {
+		ans.code = 501
+		ans.status = "Syntax error in IP address"
+		return
+	}
+	host, err := getHost(args[0])
+	if err != nil {
+		ans.code = 501
+		ans.status = "Syntax error in IP address"
+		return
+	}
+	ftp.filehost = host
+	ans.code = 200
+	ans.status = "PORT command successful"
 }

@@ -17,6 +17,7 @@ type FtpConnect struct {
 	user string
 	logged bool
 	dir string
+	filehost string
 	file FileConnect
 }
 
@@ -61,6 +62,7 @@ func handle(conn net.Conn) {
 	ftp.logged = false
 	ftp.connected = true
 	ftp.user = "anonymous"
+	ftp.filehost = ""
 	conn.Write([]byte("220 Welcome to Fkitty FTP Server!\n"))
 	for ftp.connected {
 		line, err := b.ReadBytes('\n')
