@@ -64,8 +64,10 @@ func main() {
 	methods := alloc()
 	for work {
 		fmt.Print("fkitty: ")
-		l, _ := fmt.Scanln(&com)
-		if l == 0 {
+		scanner := bufio.NewScanner(os.Stdin)
+		scanner.Scan()
+		com = scanner.Text()
+		if com == "" {
 			continue
 		}
 		res := send(conn, []byte(com))
