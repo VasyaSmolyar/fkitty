@@ -21,6 +21,7 @@ func execute(tokens []string, ftp *FtpConnect, ans *FtpAnswer) {
 		"CWD" : isLogged(cwd),
 		"PWD" : isLogged(pwd),
 		"PORT" : isLogged(port),
+		"STOR" : isLogged(store),
 	}
 
 	if len(tokens) == 0 {
@@ -185,4 +186,15 @@ func port(args []string, ftp *FtpConnect, ans *FtpAnswer) {
 	ftp.filehost = host
 	ans.code = 200
 	ans.status = "PORT command successful"
+}
+
+func store(args []string, ftp *FtpConnect, ans *FtpAnswer) {
+	err := createActive(ftp, args[0], true)
+	if err != nil {
+		ans.code = 500
+		ans.status = err.Error()
+		return
+	}
+	ans.code = 250
+	ans.status = "Requested file action okay"
 }

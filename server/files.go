@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"bufio"
 	"io/ioutil"
+	"path/filepath"
 )
 
 type FileConnect struct {
@@ -15,13 +16,13 @@ type FileConnect struct {
 	filename string
 }
 
-func createActive(ftp *FtpConnect, host string, filename string, write bool) error {
+func createActive(ftp *FtpConnect, filename string, write bool) error {
 	file := new(FileConnect)
-	file.host = host
+	file.host = ftp.filehost
 	file.active = true
-	file.filename = filename
+	file.filename = ftp.dir + string(filepath.Separator) + filename
 	file.write = write
-	conn, err := net.Dial("tcp", host)
+	conn, err := net.Dial("tcp", ftp.filehost)
 	if err != nil {
 		return err
 	}
@@ -56,12 +57,27 @@ func createPassive(ftp *FtpConnect, host string, filename string, write bool) er
 	return nil
 }
 
+func readAll(conn net.Conn) []byte {
+	bs := make([]byte, 1024)
+	res := make([]byte, 0)
+	b := bufio.NewReader(conn)
+	for {
+		n, err := b.Read(bs)
+		if err != nil {
+			break
+		}
+		if n == 0 {
+			break
+		}
+		res = append(res, bs[0:n-1]...)
+	}
+	return res 
+}
+
 func handleFile(ftp *FtpConnect) {
 	ans := new(FtpAnswer)
 	if ftp.file.write { 
-		var bs []byte
-		b := bufio.NewReader(ftp.file.conn)
-		b.Read(bs)
+		bs := readAll(ftp.file.conn)
 		err := ioutil.WriteFile(ftp.file.filename, bs, 0644)
 		if err != nil {
 			ans.code = 526
